@@ -1,14 +1,18 @@
 #ifndef ACTORGRAPH_HPP
 #define ACTORGRAPH_HPP
 
+#include <ActorVertex.hpp>
+#include <MovieEdge.hpp>
 #include <iostream>
-#include <vector>
+#include <unordered_map>
 
 using namespace std;
 
 class ActorGraph {
   protected:
     // TODO: add data structures used in actor graph
+    unordered_map<string, MovieEdge*> movieList;
+    unordered_map<string, ActorVert*> actorList;
 
   public:
     /* TODO */
