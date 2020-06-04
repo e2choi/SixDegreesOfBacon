@@ -1,5 +1,6 @@
 #include "ActorGraph.hpp"
 
+#include <algorithm>
 #include <fstream>
 #include <iostream>
 #include <queue>
@@ -49,7 +50,6 @@ bool ActorGraph::buildGraph(istream& is) {
         int year = stoi(record[2]);
 
         // TODO: we have an actor/movie relationship to build the graph
-
         /* process actor then title info */
         // check if actor is in actorList if so we go to it
         ActorVert* actorPtr;
@@ -80,7 +80,7 @@ bool ActorGraph::buildGraph(istream& is) {
             if (title == (*iter).first) {
                 // if same year then movie already exists so go to it
                 if (year == (*iter).second->year) {
-                    moviePtr = movieList.at((*iter).second->movie);
+                    moviePtr = movieList.at(title);
                     movieFound = true;
                 }
             }
@@ -88,7 +88,7 @@ bool ActorGraph::buildGraph(istream& is) {
             // and insert to movieList
         }
         if (!movieFound) {
-            vector<Actor*> moviesActors;
+            vector<ActorVert*> moviesActors;
             moviePtr = new MovieEdge(title, year, moviesActors);
             movieList.emplace(title, moviePtr);
         }
@@ -100,7 +100,7 @@ bool ActorGraph::buildGraph(istream& is) {
     // if failed to read the file, clear the graph and return
     if (!is.eof()) {
         // TODO: delete the graph
-        ~ActorGraph();
+        this->~ActorGraph();
         return false;
     }
 
@@ -114,12 +114,20 @@ void ActorGraph::BFS(const string& fromActor, const string& toActor,
     bool fromActorInList = false;
     bool toActorInList = false;
     queue<ActorVert*> q;
+    // clear out values computed for each node and exit
+    for (unordered_map<string, ActorVert*>::iterator actorListIter =
+             actorList.begin();
+         actorListIter != actorList.end(); actorListIter++) {
+        (*actorListIter).second->distance = 0;
+        (*actorListIter).second->previous = nullptr;
+        (*actorListIter).second->movie = nullptr;
+    }
     for (unordered_map<string, ActorVert*>::iterator iter = actorList.begin();
          iter != actorList.end(); iter++) {
-        if (fromActor == (*iter).first) {
+        if (fromActor == ((*iter).second->actorName)) {
             fromActorInList = true;
         }
-        if (toActor == (*iter).first) {
+        if (toActor == (*iter).second->actorName) {
             toActorInList = true;
         }
     }
@@ -129,15 +137,86 @@ void ActorGraph::BFS(const string& fromActor, const string& toActor,
         // source node at fromActor
         ActorVert* source = actorList.at(fromActor);
         source->distance = 0;
+        source->visited = false;
         q.push(source);
+        // populate queue w neighbors for each node in queue
+        while (!q.empty()) {
+            ActorVert* curr = q.front();
+            q.pop();
+            // traverse all movie edges of q
+            for (vector<MovieEdge*>::iterator movieIter =
+                     curr->actorMovies.begin();
+                 movieIter != curr->actorMovies.end(); ++movieIter) {
+                // traverse actors of each movie and push them to queue b/c
+                // means neighbors
+                for (vector<ActorVert*>::iterator actorIter =
+                         (*movieIter)->actors.begin();
+                     actorIter != (*movieIter)->actors.end(); ++actorIter) {
+                    ActorVert* neighbor = actorList[(*actorIter)->actorName];
+                    // check if visisted yet if not then add to queue and mark
+                    // as visisted
+                    if (!neighbor->visited) {
+                        neighbor->previous = curr;
+                        neighbor->movie = *movieIter;
+                        neighbor->distance = curr->distance + 1;
+                        neighbor->visited = true;
+                        q.push(neighbor);
+                    }
+                }
+            }
+        }
 
+        // done traversing tree now need to compute path
+        vector<ActorVert*> bfsPath;
+        ActorVert* currNode = actorList.at(toActor);
+        bfsPath.push_back(currNode);
+        // compute path using previous pointer to traverse nodes
+        while (currNode != actorList.at(fromActor)) {
+            if (currNode->previous != nullptr) {
+                currNode = currNode->previous;
+                bfsPath.push_back(currNode);
+            }
+            // if no null ptr then no path back to fromActor
+            else {
+                break;
+            }
+        }
+        // print out final format start from end because we created path
+        // backwards
+        reverse(bfsPath.begin(), bfsPath.end());
+
+        for (unsigned int i = 0; i < bfsPath.size(); i++) {
+            // cout << bfsPath.at(i)->actorName << endl;
+            // check if toActor node so no arrows after it just (actor)
+            if (i == bfsPath.size() - 1) {
+                cout << "test1" << endl;
+                shortestPath += "(" + bfsPath.at(i)->actorName + ")";
+                // otherwise print the node and the path after its
+            } else {
+                cout << "test2" << endl;
+                shortestPath += "(" + bfsPath.at(i)->actorName + ")";
+                shortestPath +=
+                    "--[" + bfsPath.at(i + 1)->movie->movieName + "#@" +
+                    to_string(bfsPath.at(i + 1)->movie->year) + "]-->";
+            }
+        }
     }
     // else fromActor and toActor not in list so
     else {
         shortestPath = "";
-        return;
     }
 }
 
 /* TODO */
-ActorGraph::~ActorGraph() {}
+ActorGraph::~ActorGraph() {
+    for (unordered_map<string, ActorVert*>::iterator actorDestIter =
+             actorList.begin();
+         actorDestIter != actorList.end(); actorDestIter++) {
+        delete (*actorDestIter).second;
+    }
+    for (unordered_map<string, MovieEdge*>::iterator movieDestIter =
+             movieList.begin();
+         movieDestIter != movieList.end(); movieDestIter++) {
+        delete (*movieDestIter).second;
+    }
+}

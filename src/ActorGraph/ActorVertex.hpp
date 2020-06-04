@@ -15,19 +15,19 @@ class MovieEdge;
 /* Class defines the vertex of an Actor */
 class ActorVert {
   public:
-    string actorName;                // name of vertex with actor's name
-    ActorVert* previous;             // points to prev node
-    MovieEdge* movie;                // movie object
-    int distance;                    // distance from starting node
-    int idx;                         // the index of this vertex
+    const string actorName;  // name of vertex with actor's name
+    ActorVert* previous;     // points to prev node
+    MovieEdge* movie;        // movie object
+    int distance;            // distance from starting node
+    bool visited;
     vector<MovieEdge*> actorMovies;  // list of outgoing edges for an actor
 
     // constructor
-    ActorVert(string name, vector<MovieEdge*> moviesList)
+    ActorVert(const string& name, vector<MovieEdge*> moviesList)
         : actorName(name),
           actorMovies(moviesList),
           distance(MAX_ACTORS),
-          idx(-1) {}
+          visited(false) {}
 };
 
 #endif

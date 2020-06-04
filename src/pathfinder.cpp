@@ -8,6 +8,7 @@
 #include <sstream>
 #include <string>
 #include <vector>
+
 #include "ActorGraph.hpp"
 
 using namespace std;
@@ -81,6 +82,7 @@ int main(int argc, char* argv[]) {
         string shortestPath = "";
         graph->BFS(actor1, actor2, shortestPath);
         if (shortestPath.length() > 0) {
+            cout << shortestPath << endl;
             outfile << shortestPath;
         }
         outfile << endl;
