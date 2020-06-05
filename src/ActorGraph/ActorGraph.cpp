@@ -63,21 +63,62 @@ bool ActorGraph::buildGraph(istream& is) {
             actorList.emplace(actor, actor_name);
             actorIter = actorList.find(actor);
         }
+        string newTitle = title + to_string(year);
         unordered_map<string, MovieEdge*>::iterator movieIter =
-            movieList.find(title);
+            movieList.find(newTitle);
         if (movieIter == movieList.end()) {
             MovieEdge* movie1 = new MovieEdge(title, year, actors);
-            movieList.emplace(title, movie1);
-            movieIter = movieList.find(title);
+            movieList.emplace(newTitle, movie1);
+            movieIter = movieList.find(newTitle);
         } else {
             if (year != (*movieIter).second->year) {
                 MovieEdge* movie2 = new MovieEdge(title, year, actors);
-                movieList.emplace(title, movie2);
+                movieList.emplace(newTitle, movie2);
+                movieIter = movieList.find(newTitle);
             }
         }
+        // ActorVert* newActor;
+        // MovieEdge* newMovie;
+        // cout << "Input: " << actor << " " << title << " " << year << endl;
+        // unordered_map<string, ActorVert*>::iterator actorIter =
+        //     actorList.find(actor);
+        // if (actorIter == actorList.end()) {
+        //     newActor = new ActorVert(actor, movies);
+        //     actorIter = actorList.insert(make_pair(title, newActor)).first;
+        //     cout << (*actorIter).second->actorName << endl;
+        //     cout << "actor if" << endl;
+        // }
+        // unordered_map<string, MovieEdge*>::iterator movieIter =
+        //     movieList.find(title);
+        // if (movieIter == movieList.end()) {
+        //     newMovie = new MovieEdge(title, year, actors);
+        //     movieIter = movieList.insert(make_pair(title, newMovie)).first;
+        //     cout << (*movieIter).second->movieName << endl;
+        //     cout << "movie if" << endl;
+        // } else {
+        //     if (year != (*movieIter).second->year) {
+        //         newMovie = new MovieEdge(title, year, actors);
+        //         movieIter = movieList.insert(make_pair(title,
+        //         newMovie)).first; cout << (*movieIter).second->movieName <<
+        //         endl; cout << "year if" << endl;
+        //     } else {
+        //         movieIter = movieList.find(title);
+        //         cout << "else" << endl;
+        //     }
+        // }
         // update actor's movie list and movie's actor list (adjacency matrices)
+        // cout << (*actorIter).second->actorName << ": ";
         (*actorIter).second->actorMovies.push_back((*movieIter).second);
         (*movieIter).second->actors.push_back((*actorIter).second);
+        // for (int i = 0; i < (*actorIter).second->actorMovies.size(); i++) {
+        //     cout << (*actorIter).second->actorMovies[i]->movieName << " ";
+        // }
+        // cout << endl;
+        // cout << (*movieIter).second->movieName << ": ";
+        // for (int i = 0; i < (*movieIter).second->actors.size(); i++) {
+        //     cout << (*movieIter).second->actors[i]->actorName << " ";
+        // }
+        // cout << endl;
     }
 
     // if failed to read the file, clear the graph and return
@@ -117,7 +158,6 @@ void ActorGraph::BFS(const string& fromActor, const string& toActor,
     }
     // if fromActor and toActor in list then perform bfs
     if (fromActorInList && toActorInList) {
-        // cout << "entered if loop" << endl;
         // bfs alg
         // source node at fromActor
         ActorVert* source = actorList.at(fromActor);
