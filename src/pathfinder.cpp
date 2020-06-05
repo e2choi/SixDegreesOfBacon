@@ -82,7 +82,7 @@ int main(int argc, char* argv[]) {
         string shortestPath = "";
         graph->BFS(actor1, actor2, shortestPath);
         if (shortestPath.length() > 0) {
-            cout << shortestPath << endl;
+            // out << shortestPath << endl;
             outfile << shortestPath;
         }
         outfile << endl;

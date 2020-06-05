@@ -54,47 +54,30 @@ bool ActorGraph::buildGraph(istream& is) {
         // check if actor is in actorList if so we go to it
         ActorVert* actorPtr;
         bool actorFound = false;
-        for (unordered_map<string, ActorVert*>::iterator iter =
-                 actorList.begin();
-             iter != actorList.end(); iter++) {
-            if (actor == (*iter).first) {
-                actorPtr = actorList.at(actor);
-                actorFound = true;
+        vector<MovieEdge*> movies;
+        vector<ActorVert*> actors;
+        unordered_map<string, ActorVert*>::iterator actorIter =
+            actorList.find(actor);
+        if (actorIter == actorList.end()) {
+            ActorVert* actor_name = new ActorVert(actor, movies);
+            actorList.emplace(actor, actor_name);
+            actorIter = actorList.find(actor);
+        }
+        unordered_map<string, MovieEdge*>::iterator movieIter =
+            movieList.find(title);
+        if (movieIter == movieList.end()) {
+            MovieEdge* movie1 = new MovieEdge(title, year, actors);
+            movieList.emplace(title, movie1);
+            movieIter = movieList.find(title);
+        } else {
+            if (year != (*movieIter).second->year) {
+                MovieEdge* movie2 = new MovieEdge(title, year, actors);
+                movieList.emplace(title, movie2);
             }
-        }
-        // if not in actorList then we must insert actor
-        if (!actorFound) {
-            vector<MovieEdge*> actorsMovies;
-            actorPtr = new ActorVert(actor, actorsMovies);
-            actorList.emplace(actor, actorPtr);
-        }
-
-        /* process movie info */
-        MovieEdge* moviePtr;
-        bool movieFound = false;
-        for (unordered_map<string, MovieEdge*>::iterator iter =
-                 movieList.begin();
-             iter != movieList.end(); iter++) {
-            /* if movie title exists in mapping then check if same year so
-             * already exist or if different year then doesnt exist */
-            if (title == (*iter).first) {
-                // if same year then movie already exists so go to it
-                if (year == (*iter).second->year) {
-                    moviePtr = movieList.at(title);
-                    movieFound = true;
-                }
-            }
-            // if movie title not found or different year then create new movie
-            // and insert to movieList
-        }
-        if (!movieFound) {
-            vector<ActorVert*> moviesActors;
-            moviePtr = new MovieEdge(title, year, moviesActors);
-            movieList.emplace(title, moviePtr);
         }
         // update actor's movie list and movie's actor list (adjacency matrices)
-        actorPtr->actorMovies.push_back(moviePtr);
-        moviePtr->actors.push_back(actorPtr);
+        (*actorIter).second->actorMovies.push_back((*movieIter).second);
+        (*movieIter).second->actors.push_back((*actorIter).second);
     }
 
     // if failed to read the file, clear the graph and return
@@ -121,6 +104,7 @@ void ActorGraph::BFS(const string& fromActor, const string& toActor,
         (*actorListIter).second->distance = 0;
         (*actorListIter).second->previous = nullptr;
         (*actorListIter).second->movie = nullptr;
+        (*actorListIter).second->visited = false;
     }
     for (unordered_map<string, ActorVert*>::iterator iter = actorList.begin();
          iter != actorList.end(); iter++) {
@@ -133,6 +117,7 @@ void ActorGraph::BFS(const string& fromActor, const string& toActor,
     }
     // if fromActor and toActor in list then perform bfs
     if (fromActorInList && toActorInList) {
+        // cout << "entered if loop" << endl;
         // bfs alg
         // source node at fromActor
         ActorVert* source = actorList.at(fromActor);
@@ -144,6 +129,10 @@ void ActorGraph::BFS(const string& fromActor, const string& toActor,
             ActorVert* curr = q.front();
             q.pop();
             // traverse all movie edges of q
+            curr->visited = true;
+            if (curr == actorList[toActor]) {
+                break;
+            }
             for (vector<MovieEdge*>::iterator movieIter =
                      curr->actorMovies.begin();
                  movieIter != curr->actorMovies.end(); ++movieIter) {
@@ -186,14 +175,11 @@ void ActorGraph::BFS(const string& fromActor, const string& toActor,
         reverse(bfsPath.begin(), bfsPath.end());
 
         for (unsigned int i = 0; i < bfsPath.size(); i++) {
-            // cout << bfsPath.at(i)->actorName << endl;
             // check if toActor node so no arrows after it just (actor)
             if (i == bfsPath.size() - 1) {
-                cout << "test1" << endl;
                 shortestPath += "(" + bfsPath.at(i)->actorName + ")";
                 // otherwise print the node and the path after its
             } else {
-                cout << "test2" << endl;
                 shortestPath += "(" + bfsPath.at(i)->actorName + ")";
                 shortestPath +=
                     "--[" + bfsPath.at(i + 1)->movie->movieName + "#@" +
